@@ -1,81 +1,21 @@
-version: "3"
-
-services:
   master:
     image: spark
-    command: bin/spark-class org.apache.spark.deploy.master.Master -h master
     hostname: master
-    environment:
-      MASTER: spark://master:7077
-      SPARK_CONF_DIR: /conf
-      SPARK_PUBLIC_DNS: 172.18.255.255
-    expose:
-      - 7001
-      - 7002
-      - 7003
-      - 7004
-      - 7005
-      - 7006
-      - 7077
-      - 6066
     ports:
-      - 4040:4040
-      - 6066:6066
-      - 7077:7077
-      - 8080:8080
-    volumes:
-      - ./conf/master:/conf
-      - ./data:/tmp/data
-  spark-slave-1:
-      image: spark
-      command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-      hostname: spark-slave-1
-      environment:
-        SPARK_CONF_DIR: /conf
-        SPARK_PUBLIC_DNS: 172.18.255.255
-        SPARK_WORKER_CORES: 1
-        SPARK_WORKER_MEMORY: 1g
-        SPARK_WORKER_PORT: 8881
-        SPARK_WORKER_WEBUI_PORT: 8081
-      expose:
-        - 7012
-        - 7013
-        - 7014
-        - 7015
-        - 7016
-        - 8881
-      ports:
-        - 8081:8081
-      links:
-        - master
-      volumes:
-        - ./conf/spark-slave-1:/conf
-        - ./data:/tmp/data
-  spark-slave-2:
-        image: spark
-        command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
-        hostname: spark-slave-2
-        environment:
-          SPARK_CONF_DIR: /conf
-          SPARK_PUBLIC_DNS: 172.18.255.255
-          SPARK_WORKER_CORES: 1
-          SPARK_WORKER_MEMORY: 1g
-          SPARK_WORKER_PORT: 8881
-          SPARK_WORKER_WEBUI_PORT: 8081
-        expose:
-          - 7012
-          - 7013
-          - 7014
-          - 7015
-          - 7016
-          - 8881
-        ports:
-          - 8082:8081
-        links:
-          - master
-        volumes:
-          - ./conf/spark-slave-2:/conf
-          - ./data:/tmp/data
+     - 4040:4040
+     - 8042:8042
+     - 7077:7077
+     - 8088:8088
+     - 8080:8080
+    restart: always
+    command:  bin/spark-class org.apache.spark.deploy.master.Master -h master
+  worker:
+    image: spark
+    links:
+      - master:master
+    expose:
+      - 8081
+    command: bin/spark-class org.apache.spark.deploy.worker.Worker spark://master:7077
   zeppelin:
     image: apache/zeppelin:0.7.3
     expose:
