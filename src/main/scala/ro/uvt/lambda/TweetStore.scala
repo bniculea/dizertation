@@ -6,13 +6,12 @@ import org.apache.spark.streaming.{Seconds, StreamingContext}
 import com.datastax.spark.connector._
 import Utils._
 
-object CassandraStore {
+object TweetStore {
   def main(args: Array[String]): Unit = {
     setupTwitter()
     val conf = new SparkConf()
-    conf.set("spark.cassandra.connection.host", "192.168.1.112")
-    conf.setMaster("local[*]")
-    conf.setAppName("CassandraTweets")
+    conf.set("spark.cassandra.connection.host", args(0))
+    conf.setAppName("LambdaArchitecture")
 
     val ssc = new StreamingContext(conf, Seconds(10))
     setupLogging()
@@ -37,7 +36,7 @@ object CassandraStore {
       }
     })
 
-    ssc.checkpoint("/home/cassandra/Documents/save")
+    ssc.checkpoint("../resources/save/cass")
     ssc.start()
     ssc.awaitTermination()
   }
