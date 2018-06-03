@@ -1,43 +1,49 @@
 package ro.uvt.lambda
 
+import java.util.{Calendar, Date}
+
 import org.apache.spark.SparkConf
 import org.apache.spark.streaming.twitter.TwitterUtils
 import org.apache.spark.streaming.{Seconds, StreamingContext}
 import com.datastax.spark.connector._
 import Utils._
+import org.apache.spark.streaming.dstream.ReceiverInputDStream
+import twitter4j.Status
 
 object TweetStore {
   def main(args: Array[String]): Unit = {
-    setupTwitter()
-    val conf = new SparkConf()
-    conf.set("spark.cassandra.connection.host", args(0))
-    conf.setAppName("LambdaArchitecture")
-
-    val ssc = new StreamingContext(conf, Seconds(10))
+    setupTwitter(args(1))
+    val streamingContext = setupStreamingContext(args(0))
     setupLogging()
-    val tweets =TwitterUtils.createStream(ssc, None)
+    val tweets: ReceiverInputDStream[Status] =TwitterUtils.createStream(streamingContext, None)
     var totalTweets:Long = 0
     tweets.foreachRDD( (rdd, time) => {
       if (rdd.count> 0) {
-        val nameAndCountryStream = rdd.map(t => {
-          if (t.getUser==null || t.getPlace == null){
-            (Some("empty"), Some("empty"))
-          }
-          else {
-            (Some(t.getUser.getName), Some(t.getPlace.getCountry))
-          }
-        })
-        nameAndCountryStream.saveToCassandra("test", "tweets", SomeColumns("uname", "country"))
+        val stream = rdd.map(t => ( Calendar.getInstance().getTime, extractHour(t.getCreatedAt), extractDeviceType(t.getSource)))
+        stream.saveToCassandra("streaming", "tweets", SomeColumns("insertdate", "hour", "device"))
         totalTweets += rdd.count
         println("tweets so far: " + totalTweets)
-        if (totalTweets > 1000) {
-          System.exit(0)
-        }
       }
     })
+    streamingContext.checkpoint("../resources/save/cass")
+    streamingContext.start()
+    streamingContext.awaitTermination()
+  }
 
-    ssc.checkpoint("../resources/save/cass")
-    ssc.start()
-    ssc.awaitTermination()
+  def extractDeviceType(source: String): String = {
+      val firstIndexOfRightChevron = source.indexOf('>')
+      val lastIndexOfLeftChevron = source.lastIndexOf('<')
+      source.slice(firstIndexOfRightChevron+1, lastIndexOfLeftChevron)
+  }
+
+  def extractHour(date:Date): Int={
+    date.getHours()
+  }
+
+  def setupStreamingContext(cassandraSeedIp:String):StreamingContext={
+    val conf = new SparkConf()
+    conf.set("spark.cassandra.connection.host", cassandraSeedIp)
+    conf.setAppName("LambdaArchitecture")
+    new StreamingContext(conf, Seconds(2))
   }
 }

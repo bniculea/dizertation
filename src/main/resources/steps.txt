@@ -1,0 +1,42 @@
+1. Go to spark's bin folder
+2. run .\spark-submit.cmd --master spark://192.168.1.112:7077 --class ro.uvt.lambda.TweetStore ..\ownJar\dizertation-assembly-0.1.jar "192.168.1.112"
+    - here you pass the path to the jar that o
+3. Make sure that you have the tables created
+CREATE KEYSPACE streaming
+  WITH REPLICATION = {
+   'class' : 'SimpleStrategy',
+   'replication_factor' : 1
+  };
+
+ CREATE TABLE streaming.tweets (insertdate timestamp, hour int, device text, PRIMARY KEY (insertdate));
+
+4. Add com.datastax.spark:spark-cassandra-connector_2.11:2.0.0 to Spark interpreter in Zeppelin
+
+5. Split column to take only what is after >
+
+object HelloWorld {
+   def main(args: Array[String]) {
+      println("Hello, world!")
+      val a=  "<a href=http://twitter.com rel=nofollow>Twitter Web Client</a>"
+      val b = a.indexOf('>')
+      val c = a.lastIndexOf('<')
+      println(a.slice(b+1,c))
+   }
+}
+
+p1
+import com.datastax.spark.connector._ //Loads implicit functions
+import sqlContext.implicits._
+
+p2
+val df_albums_cassandra = sqlContext
+  .read
+  .format("org.apache.spark.sql.cassandra")
+  .options(Map( "table" -> "tweets", "keyspace" -> "test" ))
+  .load()
+
+
+p3
+df_albums_cassandra.registerTempTable("tweets");
+
+and now query it madafaca

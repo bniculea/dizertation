@@ -9,9 +9,9 @@ object Utils {
     rootLogger.setLevel(Level.ERROR);
   }
 
-  def setupTwitter(): Unit ={
+  def setupTwitter(authCredentials: String): Unit ={
     import scala.io.Source
-    for (line <- Source.fromFile("C:\\Users\\bogda\\IdeaProjects\\dizertation\\src\\main\\resources\\twitter.txt").getLines()){
+    for (line <- Source.fromFile(authCredentials).getLines()){
       val fields = line.split(" ")
       if (fields.length == 2){
         System.setProperty("twitter4j.oauth." + fields(0), fields(1))

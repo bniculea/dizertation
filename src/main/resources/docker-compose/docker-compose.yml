@@ -1,5 +1,7 @@
   #.\spark-submit --master spark://192.168.1.113:7077 --class org.apache.spark.
-     #examples.SparkPi ..\examples\jars\spark-examples_2.11-2.1.0.jar 1000
+     #examples.SparkPi ..\examples\jars\spark-examples_2.11-2.1.0.jar 1000v
+version: '3'
+services:
   master:
     image: spark
     hostname: master
@@ -42,3 +44,7 @@
       - 9160:9160
       - 7000:7000
       - 7001:7001
+    ulimits:
+      memlock: -1
+      nproc: 32768
+      nofile: 100000
